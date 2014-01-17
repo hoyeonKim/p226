@@ -12,11 +12,37 @@
 #define APP_KEY @"38768b2e-3541-30c8-a2c4-b3c3474eb607"
 #define TOOLBAR_HIGHT 44
 
-@interface ViewController ()<TMapViewDelegate>
+@interface ViewController ()<TMapViewDelegate, UISearchBarDelegate>
 @property (strong,nonatomic) TMapView *mapView;
 @end
 
 @implementation ViewController
+
+-(void)searchBarSearchButtonClicked:(UISearchBar *)searchBar{
+    [searchBar resignFirstResponder];
+    [self.mapView clearCustomObjects];
+    
+    NSString *keyword = searchBar.text;
+    TMapPathData *path = [[TMapPathData alloc]init];
+    NSArray *result = [path requestFindAddressPOI:keyword];
+    NSLog(@"Number of POI :$d",result.count);
+    
+    int i=0;
+    for(TMapPOIItem *item in result){
+        NSLog(@"Name : %@ - point:%@",[item getPOIName],[item getPOIPoint]);
+        NSString *markerID = [NSString stringWithFormat:@"marker_%d",i++];
+        TMapMarkerItem *marker = [[TMapMarkerItem alloc]init];
+        [marker setTMapPoint:[item getPOIPoint]];
+        [marker setIcon:[UIImage imageNamed:@"icon_clustering.png"]];
+        
+        [marker setCanShowCallout:YES];
+        [marker setCalloutTitle:[item getPOIName]];
+        [marker setCalloutSubtitle:[item getPOIAddress]];
+        
+        [self.mapView addCustomObject:marker ID:markerID];
+    }
+}
+
 #pragma mark T-MAP DELEGATE
 
 -(void)onClick:(TMapPoint *)point{
@@ -83,7 +109,7 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    CGRect rect = CGRectMake(0, TOOLBAR_HIGHT, self.view.frame.size.width, self.view.frame.size.height-TOOLBAR_HIGHT);
+    CGRect rect = CGRectMake(0, TOOLBAR_HIGHT+40, self.view.frame.size.width, self.view.frame.size.height-TOOLBAR_HIGHT-40);
     self.mapView =[[TMapView alloc]initWithFrame:rect];
     [self.mapView setSKPMapApiKey:APP_KEY];
     self.mapView.zoomLevel =12.0;
